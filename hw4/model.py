@@ -133,7 +133,7 @@ class RNN(nn.Module):
 
 
 class RNNLM(nn.Module):
-    def __init__(self, vocab_size, rnn_type='LSTM'):
+    def __init__(self, vocab_size, rnn_type='RNN'):
         super(RNNLM, self).__init__()
         self.rnn_dim = 16
         self.emb_dim = 32
@@ -226,8 +226,11 @@ class BiRNNLM(nn.Module):
         seq_hidden_l = seq_hidden_l[:-1, :, :] 
         
         seq_hidden_r = self.rnn_r(reverse_input_embed)
-        seq_hidden_r = seq_hidden_r[:-1, :, :]
-        seq_hidden_r = seq_hidden_r[inv_idx, :, :]
+        
+        inv_idx = torch.arange(seq_hidden_r.size(0)-1, -1, -1).long()
+        inv_idx = inv_idx.cuda()
+        seq_hidden_r = seq_hidden_r[inv_idx]
+        seq_hidden_r = seq_hidden_r[1:, :, :]
         
         seq_hidden = torch.cat([seq_hidden_l, seq_hidden_r], dim=2)
 
