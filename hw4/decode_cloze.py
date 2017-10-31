@@ -22,7 +22,7 @@ logging.basicConfig(
 BLK = "<blank>"
 
 def greedy(model, seq, vocab):
-    seq_prob = model.forward(Variable(seq[:, None]))[:,0,:]
+    seq_prob = model.forward(Variable(seq[:, None]))[:-1,0,:]
     new_seq = torch.LongTensor(seq.size())
     new_seq.copy_(seq)
     
