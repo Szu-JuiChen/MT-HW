@@ -46,7 +46,7 @@ def tensor2string(tensor, vocab):
 def main(options):
     train, dev, test, vocab = torch.load(open(options.data_file, 'rb'), pickle_module=dill)
     model = torch.load(options.model_file)
-    
+    model.cpu()    
     strings = []
     new_seqs = []
     for seq in test:

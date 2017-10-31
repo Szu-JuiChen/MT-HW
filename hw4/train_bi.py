@@ -13,7 +13,7 @@ from model import BiRNNLM
 
 logging.basicConfig(
     format='%(asctime)s %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG)
+    datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO)
 
 parser = argparse.ArgumentParser(description="Starter code for JHU CS468 Machine Translation HW4.")
 parser.add_argument("--data_file", required=True,
