@@ -133,7 +133,7 @@ class RNN(nn.Module):
 
 
 class RNNLM(nn.Module):
-    def __init__(self, vocab_size):
+    def __init__(self, vocab_size, rnn_type='LSTM'):
         super(RNNLM, self).__init__()
         self.rnn_dim = 16
         self.emb_dim = 32
@@ -158,7 +158,7 @@ class RNNLM(nn.Module):
                     )
                 )
 
-        self.rnn = RNN(self.emb_dim, self.rnn_dim)
+        self.rnn = eval(rnn_type)(self.emb_dim, self.rnn_dim)
 
     def forward(self, input_batch):
         # embeding
@@ -187,10 +187,10 @@ class RNNLM(nn.Module):
 
 # TODO: Your implementation goes here
 class BiRNNLM(nn.Module):
-    def __init__(self, vocab_size, rnn_type='LSTM'):
+    def __init__(self, vocab_size, rnn_type='RNN'):
         super(BiRNNLM, self).__init__()
         
-        self.rnn_dim = 16
+        self.rnn_dim = 8
         self.emb_dim = 32
 
         self.embed = nn.Parameter(
@@ -213,13 +213,22 @@ class BiRNNLM(nn.Module):
     def forward(self, input_batch):
         # input_batch : [sequence_length, batch_size]
         # embeding
+        
+        inv_idx = torch.arange(input_batch.size(0)-1, -1, -1).long()
+        inv_idx = inv_idx.cuda()
+        reverse_input_batch = input_batch[inv_idx, :]
+
         input_embed = self.embed[input_batch.data, :]
+        reverse_input_embed = self.embed[reverse_input_batch.data, :]
 
+        
         seq_hidden_l = self.rnn_l(input_embed)
-        seq_hidden_r = self.rnn_r(input_embed)
-
-        seq_hidden_l = seq_hidden_l[:-1] 
-        seq_hidden_r = seq_hidden_r[:-1]
+        seq_hidden_l = seq_hidden_l[:-1, :, :] 
+        
+        seq_hidden_r = self.rnn_r(reverse_input_embed)
+        seq_hidden_r = seq_hidden_r[:-1, :, :]
+        seq_hidden_r = seq_hidden_r[inv_idx, :, :]
+        
         seq_hidden = torch.cat([seq_hidden_l, seq_hidden_r], dim=2)
 
         seq_prob = log_softmax(
