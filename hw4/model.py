@@ -76,6 +76,7 @@ class LSTM(nn.Module):
             
             prev_hidden = new_hidden
         
+        hidden_list.append(prev_hidden.unsqueeze(0))
         seq_hidden = torch.cat(hidden_list, dim=0)
         
         return seq_hidden
@@ -87,21 +88,21 @@ class RNN(nn.Module):
         self.rnn_dim = rnn_dim
 
         self.weight = nn.Parameter(
-                torch.FloatTensor(
+                0.1 * torch.rand(
                     input_dim + rnn_dim,
                     rnn_dim
                     )
                 )
 
         self.bias = nn.Parameter(
-                torch.FloatTensor(
+                0.1 * torch.rand(
                     1,
                     rnn_dim
                     )
                 )
 
         self.init_hidden = nn.Parameter(
-                torch.FloatTensor(
+                0.1 * torch.rand(
                     1,
                     rnn_dim
                     )
@@ -123,7 +124,9 @@ class RNN(nn.Module):
                     ) + self.bias
             new_hidden = torch.tanh(new_hidden)
             prev_hidden = new_hidden
-        
+            
+        hidden_list.append(prev_hidden.unsqueeze(0))
+         
         seq_hidden = torch.cat(hidden_list, dim=0)
         
         return seq_hidden
@@ -136,15 +139,21 @@ class RNNLM(nn.Module):
         self.emb_dim = 32
 
         self.embed = nn.Parameter(
-                torch.FloatTensor(
+                torch.rand(
                     vocab_size,
                     self.emb_dim
                     )
                 )
 
         self.rnn_out = nn.Parameter(
-                torch.FloatTensor(
+                torch.rand(
                     self.rnn_dim,
+                    vocab_size
+                    )
+                )
+        self.rnn_out_bias = nn.Parameter(
+                torch.rand(
+                    1,
                     vocab_size
                     )
                 )
@@ -157,7 +166,7 @@ class RNNLM(nn.Module):
         
         # rnn
         seq_hidden = self.rnn(input_embed)
-        
+        seq_hidden = seq_hidden[1:, :, :]
         # seq_hidden shape : [len * batch * dim_model]
         # seq_prob shape : [len * batch * voc_size]
         
@@ -165,7 +174,7 @@ class RNNLM(nn.Module):
                 torch.matmul(
                     seq_hidden,
                     self.rnn_out
-                    )
+                    ) 
                 )
          
         #print(torch.sum(torch.exp(seq_log_prob), dim=2))
@@ -209,6 +218,8 @@ class BiRNNLM(nn.Module):
         seq_hidden_l = self.rnn_l(input_embed)
         seq_hidden_r = self.rnn_r(input_embed)
 
+        seq_hidden_l = seq_hidden_l[:-1] 
+        seq_hidden_r = seq_hidden_r[:-1]
         seq_hidden = torch.cat([seq_hidden_l, seq_hidden_r], dim=2)
 
         seq_prob = log_softmax(
