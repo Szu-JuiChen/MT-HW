@@ -18,33 +18,34 @@ def log_softmax(input_vectors):
     
 
 class LSTM(nn.Module):
-    def __init__(self, input_dim, rnn_dim):
+    def __init__(self, input_dim, rnn_dim, direction='l'):
         super(LSTM, self).__init__()    
         self.rnn_dim = rnn_dim
+        self.direction = direction
 
         self.weight = nn.Parameter(
-                torch.FloatTensor(
+                0.1 * torch.rand(
                     input_dim + rnn_dim,
                     rnn_dim * 4
                     )
                 )
 
         self.bias = nn.Parameter(
-                torch.FloatTensor(
+                0.1 * torch.rand(
                     1,
                     rnn_dim * 4
                     )
                 )
 
         self.init_hidden = nn.Parameter(
-                torch.FloatTensor(
+                0.1 * torch.rand(
                     1,
                     rnn_dim
                     )
                 )
 
         self.init_cell = nn.Parameter(
-                torch.FloatTensor(
+                0.1 * torch.rand(
                     1,
                     rnn_dim
                     )
@@ -60,7 +61,13 @@ class LSTM(nn.Module):
         
         for i in range(max_len):
             hidden_list.append(prev_hidden.unsqueeze(0))
-            rnn_input = torch.cat([input_vectors[i, :], prev_hidden], dim=1)
+            if self.direction == 'l':
+                rnn_input = torch.cat([input_vectors[i, :], prev_hidden], dim=1)
+            elif self.direction == 'r':
+                rnn_input = torch.cat([input_vectors[max_len - i - 1, :], prev_hidden], dim=1)
+            else:
+                raise 
+
             new_gates = torch.mm(
                     rnn_input,
                     self.weight
@@ -199,21 +206,27 @@ class BiRNNLM(nn.Module):
         
         self.rnn_dim = 8
         self.emb_dim = 32
-
+        self.vocab_size = vocab_size
         self.embed = nn.Parameter(
-                torch.FloatTensor(
+                torch.rand(
                     vocab_size,
                     self.emb_dim
                     )
                 )
 
         self.rnn_out = nn.Parameter(
-                torch.FloatTensor(
+                torch.rand(
                     2 * self.rnn_dim,
                     vocab_size
                     )
                 )
         
+        self.rnn_out_bias = nn.Parameter(
+                torch.rand(
+                    1,
+                    vocab_size
+                    )
+                )
         self.rnn_l = eval(rnn_type)(self.emb_dim, self.rnn_dim, direction='l')
         self.rnn_r = eval(rnn_type)(self.emb_dim, self.rnn_dim, direction='r')
     
@@ -231,11 +244,8 @@ class BiRNNLM(nn.Module):
         seq_hidden_r = seq_hidden_r[1:, :, :]
         
         seq_hidden = torch.cat([seq_hidden_l, seq_hidden_r], dim=2)
-
+        
         seq_prob = log_softmax(
-                torch.matmul(
-                    seq_hidden,
-                    self.rnn_out
-                    )
+                    seq_hidden.matmul(self.rnn_out) + self.rnn_out_bias
                 )
         return seq_prob
