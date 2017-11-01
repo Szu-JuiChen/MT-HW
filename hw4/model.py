@@ -157,7 +157,7 @@ class RNN(nn.Module):
             elif self.direction == 'r':
                 rnn_input = input_vectors[max_len - i - 1, :]
                 
-            new_hidden = torch.mm(rnn_input, self.weight_x) + self.bias_x + torch.mm(prev_hidden, self.weight_h) + self.bias_h
+            new_hidden = torch.mm(rnn_input, self.weight_x) + self.bias_x + torch.mm(prev_hidden, self.weight_h) #+ self.bias_h
             new_hidden = torch.tanh(new_hidden)
             prev_hidden = new_hidden
             
