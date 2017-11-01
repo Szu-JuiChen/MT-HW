@@ -43,18 +43,16 @@ def greedy_new(model, seq, vocab):
             pred_idx = value[choose_index].data[0] 
             new_seq[i] = pred_idx
     
-    seq_prob = model.forward(Variable(new_seq[:, None]))[:,0,:]
-    new_seq = torch.LongTensor(seq.size())
-    new_seq.copy_(seq)
-    blank_idx = []
+    new_seq_prob = model.forward(Variable(new_seq[:, None]))[:,0,:]
+    
     for i in range(seq.size(0)):
         choose_index = 0
         if i in blank_idx:
 
-            rank, value = torch.topk(seq_prob[i], 5, dim=0)
+            rank, value = torch.topk(new_seq_prob[i], 5, dim=0)
             #print(value[choose_index].data[0] == vocab.stoi[PAD])
 
-            while value[choose_index].data[0] == vocab.stoi[PAD]:
+            while value[choose_index].data[0] in [vocab.stoi[PAD], vocab.stoi[BLK]]:
                 choose_index += 1
             #_, pred_idx = torch.max(seq_prob[i], dim=0)
             pred_idx = value[choose_index].data[0] 
@@ -101,6 +99,8 @@ def main(options):
         #new_string = tensor2string(new_seq, vocab)
         #strings.append(new_string)
         new_seqs.append(new_seq)
+        print(tensor2string(seq, vocab))
+        print(tensor2string(new_seq, vocab))
         '''
         print(seq)
         raw_input()
