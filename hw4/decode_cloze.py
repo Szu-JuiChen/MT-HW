@@ -30,7 +30,7 @@ def greedy(model, seq, vocab):
     
     for i in range(seq.size(0)):
         if vocab.itos[seq[i]] == BLK or vocab.itos[seq[i]] == BLKend:
-            _, pred_idx = torch.max(seq_prob[i][1:], dim=0)
+            _, pred_idx = torch.max(seq_prob[i], dim=0)
             pred_idx = pred_idx.data[0]
             
             new_seq[i] = pred_idx
