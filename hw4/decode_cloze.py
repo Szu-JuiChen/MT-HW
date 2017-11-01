@@ -22,6 +22,7 @@ logging.basicConfig(
 
 BLK = "<blank>"
 BLKend = "<blank>\n"
+PAD = "<pad>"
 
 def greedy(model, seq, vocab):
     seq_prob = model.forward(Variable(seq[:, None]))[:,0,:]
@@ -31,8 +32,11 @@ def greedy(model, seq, vocab):
     for i in range(seq.size(0)):
         if vocab.itos[seq[i]] == BLK or vocab.itos[seq[i]] == BLKend:
             _, pred_idx = torch.max(seq_prob[i], dim=0)
-            pred_idx = pred_idx.data[0] 
-            
+            pred_idx = pred_idx.data[0]     
+            new_seq[i] = pred_idx
+        if vocab.itos[seq[i]]==PAD:
+            _, pred_idx = torch.topk(seq_prob[i], 2,dim=0)
+            pred_idx = pred_idx.data[1]     
             new_seq[i] = pred_idx
     return new_seq
 
@@ -73,7 +77,7 @@ def main(options):
             test_seq_split = test_seq.split(' ')
             for index, word in enumerate(test_seq_split):
                 if word == BLK or word == BLKend:
-                   test_seq_split[index] = vocab.itos[new_seqs[seq_index][index + 1]] # due to there are " ' " in the begin and end
+                   #test_seq_split[index] = vocab.itos[new_seqs[seq_index][index + 1]] # due to there are " ' " in the begin and end
                    Ans[-1].append(vocab.itos[new_seqs[seq_index][index + 1]])
             new_seq = u' '.join(Ans[-1]).encode('utf-8')
             new_seq += '\n'
