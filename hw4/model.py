@@ -9,14 +9,157 @@ def log_softmax(input_vectors):
     logsumexp_term = torch.log(
             torch.sum(
                 torch.exp(
-                    input_vectors - input_max,
+                    input_vectors# - input_max,
                     ),
                 dim=2,
                 keepdim=True
                 )
-            ) + input_max
+            )# + input_max
     return input_vectors - logsumexp_term
     
+
+class GRU(nn.Module):
+    def __init__(self, input_dim, rnn_dim, direction='l'):
+        super(GRU, self).__init__()    
+        self.rnn_dim = rnn_dim
+        self.direction = direction
+
+        self.W = nn.Parameter(
+                torch.rand(
+                    input_dim,
+                    rnn_dim
+                    )
+                )
+        
+        self.U = nn.Parameter(
+                torch.rand(
+                    rnn_dim,
+                    rnn_dim
+                    )
+                )
+        
+        self.C = nn.Parameter(
+                torch.rand(
+                    rnn_dim,
+                    rnn_dim
+                    )
+                )
+
+        self.b = nn.Parameter(
+                torch.rand(
+                    1,
+                    rnn_dim
+                    )
+                )
+
+        self.W_x = nn.Parameter(
+                torch.rand(
+                    input_dim,
+                    rnn_dim
+                    )
+                )
+        
+        self.U_x = nn.Parameter(
+                torch.rand(
+                    rnn_dim,
+                    rnn_dim
+                    )
+                )
+        
+        self.C_x = nn.Parameter(
+                torch.rand(
+                    rnn_dim,
+                    rnn_dim
+                    )
+                )
+
+        self.b_x = nn.Parameter(
+                torch.rand(
+                    1,
+                    rnn_dim
+                    )
+                )
+        
+        self.W_z = nn.Parameter(
+                torch.rand(
+                    input_dim,
+                    rnn_dim
+                    )
+                )
+        
+        self.U_z = nn.Parameter(
+                torch.rand(
+                    rnn_dim,
+                    rnn_dim
+                    )
+                )
+        
+        self.C_z = nn.Parameter(
+                torch.rand(
+                    rnn_dim,
+                    rnn_dim
+                    )
+                )
+
+        self.b_z = nn.Parameter(
+                torch.rand(
+                    1,
+                    rnn_dim
+                    )
+                )
+
+
+        self.init_hidden = nn.Parameter(
+                torch.rand(
+                    1,
+                    rnn_dim
+                    )
+                )
+
+        self.init_cell = nn.Parameter(
+                torch.rand(
+                    1,
+                    rnn_dim
+                    )
+                )
+        self.reset_parameters()
+    
+    def reset_parameters(self):
+        stdv = 1.0 / math.sqrt(1.0 * self.rnn_dim)
+        for weight in self.parameters():
+            weight.data.uniform_(-stdv, stdv)
+
+
+    def forward(self, input_vectors):
+        max_len = input_vectors.size(0)
+        batch_size = input_vectors.size(1)
+        prev_hidden = self.init_hidden.expand(batch_size, self.rnn_dim)
+        prev_cell = self.init_cell.expand(batch_size, self.rnn_dim)
+        hidden_list = []
+        
+        for i in range(max_len):
+            hidden_list.append(prev_hidden.unsqueeze(0))
+            if self.direction == 'l':
+                rnn_input = input_vectors[i, :]
+            elif self.direction == 'r':
+                rnn_input = input_vectors[max_len - i - 1, :]
+            else:
+                raise 
+
+            #z = torch.sigmoid(torch.mm(input_vectors, self.W_z) + torch.mm(prev_hidden, self.U_z) + +self.b_z
+            
+            new_cell = f_gate * prev_cell + i_gate * c_gate
+            new_hidden = o_gate * torch.tanh(new_cell)
+            
+            prev_hidden = new_hidden
+            prev_cell = new_cell
+        
+        if self.direction == 'r':
+            hidden_list = hidden_list[::-1]
+        
+        seq_hidden = torch.cat(hidden_list, dim=0)
+        
+        return seq_hidden
 
 class LSTM(nn.Module):
     def __init__(self, input_dim, rnn_dim, direction='l'):
@@ -60,10 +203,13 @@ class LSTM(nn.Module):
 
 
     def forward(self, input_vectors):
+        
         max_len = input_vectors.size(0)
         batch_size = input_vectors.size(1)
+        
         prev_hidden = self.init_hidden.expand(batch_size, self.rnn_dim)
         prev_cell = self.init_cell.expand(batch_size, self.rnn_dim)
+        
         hidden_list = []
         
         for i in range(max_len):
@@ -218,8 +364,8 @@ class BiRNNLM(nn.Module):
     def __init__(self, vocab_size, rnn_type='LSTM'):
         super(BiRNNLM, self).__init__()
         
-        self.rnn_dim = 8
-        self.emb_dim = 32
+        self.rnn_dim = 32
+        self.emb_dim = 64
         self.vocab_size = vocab_size
         self.embed = nn.Parameter(
                 torch.rand(
@@ -257,7 +403,10 @@ class BiRNNLM(nn.Module):
 
         seq_hidden = torch.cat([seq_hidden_l, seq_hidden_r], dim=2)
         
-        seq_prob = log_softmax(
-                    seq_hidden.matmul(self.rnn_out) + self.rnn_out_bias
-                )
-        return seq_prob
+        seq_prob = torch.exp(torch.matmul(seq_hidden, self.rnn_out) + self.rnn_out_bias)
+        seq_prob = seq_prob / torch.sum(seq_prob, dim=2, keepdim=True)
+        seq_log_prob = torch.log(seq_prob)
+        #seq_log_prob = log_softmax(
+        #            torch.matmul(seq_hidden, self.rnn_out) + self.rnn_out_bias
+        #        )
+        return seq_log_prob
