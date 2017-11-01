@@ -83,9 +83,10 @@ class LSTM(nn.Module):
         
 
 class RNN(nn.Module):
-    def __init__(self, input_dim, rnn_dim):
+    def __init__(self, input_dim, rnn_dim, direction='l'):
         super(RNN, self).__init__()    
         self.rnn_dim = rnn_dim
+        self.direction = direction
 
         self.weight = nn.Parameter(
                 0.1 * torch.rand(
@@ -117,7 +118,11 @@ class RNN(nn.Module):
         
         for i in range(max_len):
             hidden_list.append(prev_hidden.unsqueeze(0))
-            rnn_input = torch.cat([input_vectors[i, :], prev_hidden], dim=1)
+            if self.direction == 'l':
+                rnn_input = torch.cat([input_vectors[i, :], prev_hidden], dim=1)
+            elif self.direction == 'r':
+                rnn_input = torch.cat([input_vectors[max_len - i - 1, :], prev_hidden], dim=1)
+                
             new_hidden = torch.mm(
                     rnn_input,
                     self.weight
@@ -126,7 +131,9 @@ class RNN(nn.Module):
             prev_hidden = new_hidden
             
         hidden_list.append(prev_hidden.unsqueeze(0))
-         
+        
+        if self.direction == 'r':
+            hidden_list = hidden_list[::-1]
         seq_hidden = torch.cat(hidden_list, dim=0)
         
         return seq_hidden
@@ -207,29 +214,20 @@ class BiRNNLM(nn.Module):
                     )
                 )
         
-        self.rnn_l = eval(rnn_type)(self.emb_dim, self.rnn_dim)
-        self.rnn_r = eval(rnn_type)(self.emb_dim, self.rnn_dim)
-
+        self.rnn_l = eval(rnn_type)(self.emb_dim, self.rnn_dim, direction='l')
+        self.rnn_r = eval(rnn_type)(self.emb_dim, self.rnn_dim, direction='r')
+    
+    
     def forward(self, input_batch):
         # input_batch : [sequence_length, batch_size]
         # embeding
         
-        inv_idx = torch.arange(input_batch.size(0)-1, -1, -1).long()
-        inv_idx = inv_idx.cuda()
-        reverse_input_batch = input_batch[inv_idx, :]
-
         input_embed = self.embed[input_batch.data, :]
-        reverse_input_embed = self.embed[reverse_input_batch.data, :]
-
         
         seq_hidden_l = self.rnn_l(input_embed)
         seq_hidden_l = seq_hidden_l[:-1, :, :] 
         
-        seq_hidden_r = self.rnn_r(reverse_input_embed)
-        
-        inv_idx = torch.arange(seq_hidden_r.size(0)-1, -1, -1).long()
-        inv_idx = inv_idx.cuda()
-        seq_hidden_r = seq_hidden_r[inv_idx]
+        seq_hidden_r = self.rnn_r(input_embed)
         seq_hidden_r = seq_hidden_r[1:, :, :]
         
         seq_hidden = torch.cat([seq_hidden_l, seq_hidden_r], dim=2)
