@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import math
 from torch.autograd import Variable
 
 # TODO: Your implementation goes here
@@ -24,28 +25,28 @@ class LSTM(nn.Module):
         self.direction = direction
 
         self.weight = nn.Parameter(
-                0.1 * torch.rand(
+                torch.rand(
                     input_dim + rnn_dim,
                     rnn_dim * 4
                     )
                 )
 
         self.bias = nn.Parameter(
-                0.1 * torch.rand(
+                torch.rand(
                     1,
                     rnn_dim * 4
                     )
                 )
 
         self.init_hidden = nn.Parameter(
-                0.1 * torch.rand(
+                torch.rand(
                     1,
                     rnn_dim
                     )
                 )
 
         self.init_cell = nn.Parameter(
-                0.1 * torch.rand(
+                torch.rand(
                     1,
                     rnn_dim
                     )
@@ -76,12 +77,14 @@ class LSTM(nn.Module):
             f_gate = torch.sigmoid(new_gates[:, :self.rnn_dim])
             i_gate = torch.sigmoid(new_gates[:, self.rnn_dim : 2 * self.rnn_dim])
             o_gate = torch.sigmoid(new_gates[:, 2 * self.rnn_dim: 3 * self.rnn_dim])
-            input_v = torch.tanh(new_gates[:, 3 * self.rnn_dim:])
+            #input_v = torch.tanh(new_gates[:, 3 * self.rnn_dim:])
+            input_v = new_gates[:, 3 * self.rnn_dim:]
             
             new_cell = f_gate * prev_cell + i_gate * input_v
             new_hidden = o_gate * torch.tanh(new_cell)
             
             prev_hidden = new_hidden
+            prev_cell = new_cell
         
         hidden_list.append(prev_hidden.unsqueeze(0))
         seq_hidden = torch.cat(hidden_list, dim=0)
@@ -229,7 +232,13 @@ class BiRNNLM(nn.Module):
                 )
         self.rnn_l = eval(rnn_type)(self.emb_dim, self.rnn_dim, direction='l')
         self.rnn_r = eval(rnn_type)(self.emb_dim, self.rnn_dim, direction='r')
+        
+        self.reset_parameters()
     
+    def reset_parameters(self):
+        stdv = 1.0 / math.sqrt(1.0 * self.rnn_dim)
+        for weight in self.parameters():
+            weight.data.uniform_(-stdv, stdv)
     
     def forward(self, input_batch):
         # input_batch : [sequence_length, batch_size]
