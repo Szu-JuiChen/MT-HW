@@ -361,8 +361,8 @@ class BiRNNLM(nn.Module):
     def __init__(self, vocab_size, rnn_type='GRU'):
         super(BiRNNLM, self).__init__()
         
-        self.rnn_dim = 16
-        self.emb_dim = 32
+        self.rnn_dim = 32
+        self.emb_dim = 64
         self.vocab_size = vocab_size
         self.embed = nn.Parameter(
                 torch.rand(
