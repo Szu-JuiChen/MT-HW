@@ -14,6 +14,6 @@ code_path="/export/b18/xma/course/machine_translation/MT-HW/hw4"
 #mkdir -p model
 CUDA_VISIBLE_DEVICES=${device} python decode_cloze.py \
   --data_file data/hw4_data.bin \
-  --model_file experiment/model.bi.nll_4.26.epoch_3 \
+  --model_file experiment/model.bi.nll_4.18.epoch_6 \
   --output_file output_test \
   --test_file data/test.en.txt.cloze

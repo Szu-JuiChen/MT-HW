@@ -24,14 +24,28 @@ class LSTM(nn.Module):
         self.rnn_dim = rnn_dim
         self.direction = direction
 
-        self.weight = nn.Parameter(
+        self.weight_x = nn.Parameter(
                 torch.rand(
                     input_dim + rnn_dim,
                     rnn_dim * 4
                     )
                 )
 
-        self.bias = nn.Parameter(
+        self.bias_x = nn.Parameter(
+                torch.rand(
+                    1,
+                    rnn_dim * 4
+                    )
+                )
+
+        self.weight_h = nn.Parameter(
+                torch.rand(
+                    input_dim + rnn_dim,
+                    rnn_dim * 4
+                    )
+                )
+
+        self.bias_h = nn.Parameter(
                 torch.rand(
                     1,
                     rnn_dim * 4
@@ -63,24 +77,21 @@ class LSTM(nn.Module):
         for i in range(max_len):
             hidden_list.append(prev_hidden.unsqueeze(0))
             if self.direction == 'l':
-                rnn_input = torch.cat([input_vectors[i, :], prev_hidden], dim=1)
+                rnn_input = input_vectors[i, :]
             elif self.direction == 'r':
-                rnn_input = torch.cat([input_vectors[max_len - i - 1, :], prev_hidden], dim=1)
+                rnn_input = input_vectors[max_len - i - 1, :]
             else:
                 raise 
 
-            new_gates = torch.mm(
-                    rnn_input,
-                    self.weight
-                    ) + self.bias
+            new_gates = torch.mm(rnn_input, self.weight_x) + self.bias_x + torch.mm(prev_hidden, self.weight_h) + self.bias_h
 
             f_gate = torch.sigmoid(new_gates[:, :self.rnn_dim])
             i_gate = torch.sigmoid(new_gates[:, self.rnn_dim : 2 * self.rnn_dim])
             o_gate = torch.sigmoid(new_gates[:, 2 * self.rnn_dim: 3 * self.rnn_dim])
-            #input_v = torch.tanh(new_gates[:, 3 * self.rnn_dim:])
-            input_v = new_gates[:, 3 * self.rnn_dim:]
+            c_gate = torch.tanh(new_gates[:, 3 * self.rnn_dim:])
+            #input_v = new_gates[:, 3 * self.rnn_dim:]
             
-            new_cell = f_gate * prev_cell + i_gate * input_v
+            new_cell = f_gate * prev_cell + i_gate * c_gate
             new_hidden = o_gate * torch.tanh(new_cell)
             
             prev_hidden = new_hidden
@@ -98,20 +109,33 @@ class RNN(nn.Module):
         self.rnn_dim = rnn_dim
         self.direction = direction
 
-        self.weight = nn.Parameter(
+        self.weight_x = nn.Parameter(
                 0.1 * torch.rand(
-                    input_dim + rnn_dim,
+                    input_dim,
                     rnn_dim
                     )
                 )
 
-        self.bias = nn.Parameter(
+        self.bias_x = nn.Parameter(
                 0.1 * torch.rand(
                     1,
                     rnn_dim
                     )
                 )
 
+        self.weight_h = nn.Parameter(
+                0.1 * torch.rand(
+                    rnn_dim,
+                    rnn_dim
+                    )
+                )
+
+        self.bias_h = nn.Parameter(
+                0.1 * torch.rand(
+                    1,
+                    rnn_dim
+                    )
+                )
         self.init_hidden = nn.Parameter(
                 0.1 * torch.rand(
                     1,
@@ -129,14 +153,11 @@ class RNN(nn.Module):
         for i in range(max_len):
             hidden_list.append(prev_hidden.unsqueeze(0))
             if self.direction == 'l':
-                rnn_input = torch.cat([input_vectors[i, :], prev_hidden], dim=1)
+                rnn_input = input_vectors[i, :]
             elif self.direction == 'r':
-                rnn_input = torch.cat([input_vectors[max_len - i - 1, :], prev_hidden], dim=1)
+                rnn_input = input_vectors[max_len - i - 1, :]
                 
-            new_hidden = torch.mm(
-                    rnn_input,
-                    self.weight
-                    ) + self.bias
+            new_hidden = torch.mm(rnn_input, self.weight_x) + self.bias_x + torch.mm(prev_hidden, self.weight_h) + self.bias_h
             new_hidden = torch.tanh(new_hidden)
             prev_hidden = new_hidden
             
@@ -255,6 +276,6 @@ class BiRNNLM(nn.Module):
         seq_hidden = torch.cat([seq_hidden_l, seq_hidden_r], dim=2)
         
         seq_prob = log_softmax(
-                    seq_hidden.matmul(self.rnn_out) + self.rnn_out_bias
+                    seq_hidden.matmul(self.rnn_out) #+ self.rnn_out_bias
                 )
         return seq_prob
