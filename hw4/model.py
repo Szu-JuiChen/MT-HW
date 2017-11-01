@@ -26,7 +26,7 @@ class LSTM(nn.Module):
 
         self.weight_x = nn.Parameter(
                 torch.rand(
-                    input_dim + rnn_dim,
+                    input_dim,
                     rnn_dim * 4
                     )
                 )
@@ -40,7 +40,7 @@ class LSTM(nn.Module):
 
         self.weight_h = nn.Parameter(
                 torch.rand(
-                    input_dim + rnn_dim,
+                    rnn_dim,
                     rnn_dim * 4
                     )
                 )
@@ -276,6 +276,6 @@ class BiRNNLM(nn.Module):
         seq_hidden = torch.cat([seq_hidden_l, seq_hidden_r], dim=2)
         
         seq_prob = log_softmax(
-                    seq_hidden.matmul(self.rnn_out) #+ self.rnn_out_bias
+                    seq_hidden.matmul(self.rnn_out) + self.rnn_out_bias
                 )
         return seq_prob
