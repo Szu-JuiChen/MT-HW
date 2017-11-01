@@ -88,24 +88,24 @@ class RNN(nn.Module):
         self.rnn_dim = rnn_dim
 
         self.weight = nn.Parameter(
-                0.1 * torch.rand(
+                torch.FloatTensor(
                     input_dim + rnn_dim,
                     rnn_dim
-                    )
+                    ).uniform_(0.01)
                 )
 
         self.bias = nn.Parameter(
-                0.1 * torch.rand(
+                torch.FloatTensor(
                     1,
                     rnn_dim
-                    )
+                    ).uniform_(0.01)
                 )
 
         self.init_hidden = nn.Parameter(
-                0.1 * torch.rand(
+                torch.FloatTensor(
                     1,
                     rnn_dim
-                    )
+                    ).uniform_(0.01)
                 )
     
         
@@ -197,14 +197,20 @@ class BiRNNLM(nn.Module):
                 torch.FloatTensor(
                     vocab_size,
                     self.emb_dim
-                    )
+                    ).uniform_()
                 )
 
         self.rnn_out = nn.Parameter(
                 torch.FloatTensor(
                     2 * self.rnn_dim,
                     vocab_size
-                    )
+                    ).uniform_()
+                )
+        self.rnn_out_bias = nn.Parameter(
+                torch.FloatTensor(
+                    1,
+                    vocab_size
+                    ).uniform_()
                 )
         
         self.rnn_l = eval(rnn_type)(self.emb_dim, self.rnn_dim)
@@ -238,6 +244,6 @@ class BiRNNLM(nn.Module):
                 torch.matmul(
                     seq_hidden,
                     self.rnn_out
-                    )
+                    ) + self.rnn_out_bias
                 )
         return seq_prob
