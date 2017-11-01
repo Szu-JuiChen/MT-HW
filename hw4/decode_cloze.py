@@ -24,14 +24,14 @@ BLK = "<blank>"
 BLKend = "<blank>\n"
 
 def greedy(model, seq, vocab):
-    seq_prob = model.forward(Variable(seq[:, None]))[:-1,0,:]
+    seq_prob = model.forward(Variable(seq[:, None]))[:,0,:]
     new_seq = torch.LongTensor(seq.size())
     new_seq.copy_(seq)
     
     for i in range(seq.size(0)):
         if vocab.itos[seq[i]] == BLK or vocab.itos[seq[i]] == BLKend:
             _, pred_idx = torch.max(seq_prob[i], dim=0)
-            pred_idx = pred_idx.data[0]
+            pred_idx = pred_idx.data[0] 
             
             new_seq[i] = pred_idx
     return new_seq
@@ -49,12 +49,12 @@ def tensor2string(tensor, vocab):
 def main(options):
     train, dev, test, vocab = torch.load(open(options.data_file, 'rb'), pickle_module=dill)
     model = torch.load(options.model_file)
+    #print(type(model)) 
     model.cpu()    
     strings = []
     new_seqs = []
     for seq in test:
         new_seq = greedy(model, seq, vocab)
-        
         #new_string = tensor2string(new_seq, vocab)
         #strings.append(new_string)
         new_seqs.append(new_seq)
