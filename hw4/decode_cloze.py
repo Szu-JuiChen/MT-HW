@@ -22,6 +22,7 @@ logging.basicConfig(
 
 BLK = "<blank>"
 BLKend = "<blank>\n"
+PAD= '<pad>'
 
 def greedy(model, seq, vocab):
     seq_prob = model.forward(Variable(seq[:, None]))[:,0,:]
@@ -29,10 +30,15 @@ def greedy(model, seq, vocab):
     new_seq.copy_(seq)
     
     for i in range(seq.size(0)):
+        choose_index = 0
         if vocab.itos[seq[i]] == BLK or vocab.itos[seq[i]] == BLKend:
-            _, pred_idx = torch.max(seq_prob[i], dim=0)
-            pred_idx = pred_idx.data[0] 
-            
+            rank, value = torch.topk(seq_prob[i], 5, dim=0)
+            print(value[choose_index].data[0] == vocab.stoi[PAD])
+
+            while value[choose_index].data[0] == vocab.stoi[PAD]:
+                choose_index += 1
+            #_, pred_idx = torch.max(seq_prob[i], dim=0)
+            pred_idx = value[choose_index].data[0] 
             new_seq[i] = pred_idx
     return new_seq
 
