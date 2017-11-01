@@ -151,6 +151,8 @@ class GRU(nn.Module):
             
             prev_hidden = new_hidden
         
+        hidden_list.append(prev_hidden.unsqueeze(0))
+        
         if self.direction == 'r':
             hidden_list = hidden_list[::-1]
         
@@ -232,6 +234,8 @@ class LSTM(nn.Module):
             prev_hidden = new_hidden
             prev_cell = new_cell
         
+        hidden_list.append(prev_hidden.unsqueeze(0))
+        
         if self.direction == 'r':
             hidden_list = hidden_list[::-1]
         
@@ -294,7 +298,7 @@ class RNN(nn.Module):
             
             prev_hidden = new_hidden
             
-        #hidden_list.append(prev_hidden.unsqueeze(0))
+        hidden_list.append(prev_hidden.unsqueeze(0))
         
         if self.direction == 'r':
             hidden_list = hidden_list[::-1]
@@ -337,7 +341,7 @@ class RNNLM(nn.Module):
         
         # rnn
         seq_hidden = self.rnn(input_embed)
-        seq_hidden = seq_hidden[1:, :, :]
+        seq_hidden = seq_hidden[1:]
         # seq_hidden shape : [len * batch * dim_model]
         # seq_prob shape : [len * batch * voc_size]
         
@@ -349,7 +353,8 @@ class RNNLM(nn.Module):
                 )
          
         #print(torch.sum(torch.exp(seq_log_prob), dim=2))
-        #print(seq_log_prob)
+        #print(input_batch.size())
+        #print(seq_log_prob.size())
         return seq_log_prob
 
 
@@ -393,9 +398,9 @@ class BiRNNLM(nn.Module):
         
         input_embed = self.embed[input_batch.data, :]
        
-        seq_hidden_l = self.rnn_l(input_embed)
+        seq_hidden_l = self.rnn_l(input_embed)[:-1,:,:]
         
-        seq_hidden_r = self.rnn_r(input_embed)
+        seq_hidden_r = self.rnn_r(input_embed)[1:,:,:]
 
         seq_hidden = torch.cat([seq_hidden_l, seq_hidden_r], dim=2)
       

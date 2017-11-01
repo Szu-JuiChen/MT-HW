@@ -24,8 +24,14 @@ BLK = "<blank>"
 BLKend = "<blank>\n"
 PAD= '<pad>'
 
-def greedy_new(model, seq, vocab):
-    seq_prob = model.forward(Variable(seq[:, None]))[:,0,:]
+def sentence_score(seq, models):
+    seq_prob = 0
+    for model in models:
+        seq_prob = seq_prob + torch.exp(model.forward(Variable(seq[:, None]))[:,0,:])
+    return seq_prob
+        
+def greedy_new(models, seq, vocab):
+    seq_prob = sentence_score(seq, models)
     new_seq = torch.LongTensor(seq.size())
     new_seq.copy_(seq)
     blank_idx = []
@@ -43,22 +49,7 @@ def greedy_new(model, seq, vocab):
             pred_idx = value[choose_index].data[0] 
             new_seq[i] = pred_idx
     
-    new_seq_prob = model.forward(Variable(new_seq[:, None]))[:,0,:]
-    
-    for i in range(seq.size(0)):
-        choose_index = 0
-        if i in blank_idx:
-
-            rank, value = torch.topk(new_seq_prob[i], 5, dim=0)
-            #print(value[choose_index].data[0] == vocab.stoi[PAD])
-
-            while value[choose_index].data[0] in [vocab.stoi[PAD], vocab.stoi[BLK]]:
-                choose_index += 1
-            #_, pred_idx = torch.max(seq_prob[i], dim=0)
-            pred_idx = value[choose_index].data[0] 
-            new_seq[i] = pred_idx
-    
-    new_seq_prob = model.forward(Variable(new_seq[:, None]))[:,0,:]
+    new_seq_prob = sentence_score(seq, models)
     
     for i in range(seq.size(0)):
         choose_index = 0
@@ -104,13 +95,18 @@ def tensor2string(tensor, vocab):
 
 def main(options):
     train, dev, test, vocab = torch.load(open(options.data_file, 'rb'), pickle_module=dill)
-    model = torch.load(options.model_file)
+    models = []
+    for _file in options.model_file:
+        print(_file)
+        model = torch.load(_file)
+        model.cpu()
+        models.append(model)
     #print(type(model)) 
-    model.cpu()    
+    #model.cpu()    
     strings = []
     new_seqs = []
     for seq in test:
-        new_seq = greedy_new(model, seq, vocab)
+        new_seq = greedy_new(models, seq, vocab)
         #new_string = tensor2string(new_seq, vocab)
         #strings.append(new_string)
         new_seqs.append(new_seq)
@@ -136,14 +132,13 @@ def main(options):
             new_seq = u' '.join(Ans[-1]).encode('utf-8')
             new_seq += '\n'
             f_w.write(new_seq)
-            
             seq_index += 1
         
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Decoding part of mt hw 4")
     parser.add_argument("--data_file", required=True,
             help="File for training set.")
-    parser.add_argument("--model_file", required=True,
+    parser.add_argument("--model_file", required=True, nargs='+',
             help="Location to dump the models.")
     parser.add_argument("--output_file", required=True,
             help="Location for output.")
