@@ -24,6 +24,43 @@ BLK = "<blank>"
 BLKend = "<blank>\n"
 PAD= '<pad>'
 
+def greedy_new(model, seq, vocab):
+    seq_prob = model.forward(Variable(seq[:, None]))[:,0,:]
+    new_seq = torch.LongTensor(seq.size())
+    new_seq.copy_(seq)
+    blank_idx = []
+    for i in range(seq.size(0)):
+        choose_index = 0
+        if vocab.itos[seq[i]] == BLK or vocab.itos[seq[i]] == BLKend:
+            blank_idx.append(i)
+
+            rank, value = torch.topk(seq_prob[i], 5, dim=0)
+            #print(value[choose_index].data[0] == vocab.stoi[PAD])
+
+            while value[choose_index].data[0] == vocab.stoi[PAD]:
+                choose_index += 1
+            #_, pred_idx = torch.max(seq_prob[i], dim=0)
+            pred_idx = value[choose_index].data[0] 
+            new_seq[i] = pred_idx
+    
+    seq_prob = model.forward(Variable(new_seq[:, None]))[:,0,:]
+    new_seq = torch.LongTensor(seq.size())
+    new_seq.copy_(seq)
+    blank_idx = []
+    for i in range(seq.size(0)):
+        choose_index = 0
+        if i in blank_idx:
+
+            rank, value = torch.topk(seq_prob[i], 5, dim=0)
+            #print(value[choose_index].data[0] == vocab.stoi[PAD])
+
+            while value[choose_index].data[0] == vocab.stoi[PAD]:
+                choose_index += 1
+            #_, pred_idx = torch.max(seq_prob[i], dim=0)
+            pred_idx = value[choose_index].data[0] 
+            new_seq[i] = pred_idx
+    return new_seq
+
 def greedy(model, seq, vocab):
     seq_prob = model.forward(Variable(seq[:, None]))[:,0,:]
     new_seq = torch.LongTensor(seq.size())
@@ -33,7 +70,7 @@ def greedy(model, seq, vocab):
         choose_index = 0
         if vocab.itos[seq[i]] == BLK or vocab.itos[seq[i]] == BLKend:
             rank, value = torch.topk(seq_prob[i], 5, dim=0)
-            print(value[choose_index].data[0] == vocab.stoi[PAD])
+            #print(value[choose_index].data[0] == vocab.stoi[PAD])
 
             while value[choose_index].data[0] == vocab.stoi[PAD]:
                 choose_index += 1
@@ -60,7 +97,7 @@ def main(options):
     strings = []
     new_seqs = []
     for seq in test:
-        new_seq = greedy(model, seq, vocab)
+        new_seq = greedy_new(model, seq, vocab)
         #new_string = tensor2string(new_seq, vocab)
         #strings.append(new_string)
         new_seqs.append(new_seq)
