@@ -15,5 +15,5 @@ code_path="/export/b18/xma/course/machine_translation/MT-HW/hw4"
 CUDA_VISIBLE_DEVICES=${device} python ../decode_cloze.py \
   --data_file ../data/hw4_data.bin \
   --model_file $@\
-  --output_file ../output_test \
+  --output_file ../output_pun \
   --test_file ../data/test.en.txt.cloze

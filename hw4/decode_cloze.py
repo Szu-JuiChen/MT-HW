@@ -43,7 +43,7 @@ def greedy_new(models, seq, vocab):
             rank, value = torch.topk(seq_prob[i], 5, dim=0)
             #print(value[choose_index].data[0] == vocab.stoi[PAD])
 
-            while value[choose_index].data[0] == vocab.stoi[PAD]:
+            while value[choose_index].data[0] in [vocab.stoi[PAD], vocab.stoi[','], vocab.stoi['.']]:
                 choose_index += 1
             #_, pred_idx = torch.max(seq_prob[i], dim=0)
             pred_idx = value[choose_index].data[0] 
@@ -58,7 +58,7 @@ def greedy_new(models, seq, vocab):
             rank, value = torch.topk(new_seq_prob[i], 5, dim=0)
             #print(value[choose_index].data[0] == vocab.stoi[PAD])
 
-            while value[choose_index].data[0] in [vocab.stoi[PAD], vocab.stoi[BLK]]:
+            while value[choose_index].data[0] in [vocab.stoi[PAD], vocab.stoi[','], vocab.stoi['.'], vocab.stoi[PAD], vocab.stoi[BLK]]:
                 choose_index += 1
             #_, pred_idx = torch.max(seq_prob[i], dim=0)
             pred_idx = value[choose_index].data[0] 

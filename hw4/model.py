@@ -363,7 +363,7 @@ class RNNLM(nn.Module):
 
 # TODO: Your implementation goes here
 class BiRNNLM(nn.Module):
-    def __init__(self, vocab_size, rnn_type='LSTM'):
+    def __init__(self, vocab_size, rnn_type='GRU'):
         super(BiRNNLM, self).__init__()
         
         self.rnn_dim = 32
