@@ -8,8 +8,11 @@ import logging
 import torch
 from torch import cuda
 from torch.autograd import Variable
+
 # from example_module import BiRNNLM
 from model import BiRNNLM
+
+
 
 logging.basicConfig(
     format='%(asctime)s %(levelname)s: %(message)s',
@@ -110,7 +113,11 @@ def main(options):
     if (last_dev_avg_loss - dev_avg_loss).data[0] < options.estop:
       logging.info("Early stopping triggered with threshold {0} (previous dev loss: {1}, current: {2})".format(epoch_i, last_dev_avg_loss.data[0], dev_avg_loss.data[0]))
       break
+<<<<<<< HEAD
     torch.save(rnnlm, open(options.model_file + ".nll_{0:.6f}.epoch_{1}".format(dev_avg_loss.data[0], epoch_i), 'wb'), pickle_module=dill)
+=======
+    torch.save(rnnlm, open(options.model_file + ".nll_{0:.2f}.epoch_{1}".format(dev_avg_loss.data[0], epoch_i), 'wb'), pickle_module=dill)
+>>>>>>> 747815c5a238ebd36fef16228a95b208d98765eb
     last_dev_avg_loss = dev_avg_loss
 
 
