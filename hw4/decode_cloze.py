@@ -35,15 +35,17 @@ def greedy_new(models, seq, vocab):
     new_seq = torch.LongTensor(seq.size())
     new_seq.copy_(seq)
     blank_idx = []
+    forbid_list = [vocab.stoi[PAD], vocab.stoi[','], vocab.stoi['.'], vocab.stoi['-'], vocab.stoi[':'], vocab.stoi['&apos;s'], vocab.stoi['&quot;']]
+
     for i in range(seq.size(0)):
         choose_index = 0
         if vocab.itos[seq[i]] == BLK or vocab.itos[seq[i]] == BLKend:
             blank_idx.append(i)
 
-            rank, value = torch.topk(seq_prob[i], 5, dim=0)
+            rank, value = torch.topk(seq_prob[i], 10, dim=0)
             #print(value[choose_index].data[0] == vocab.stoi[PAD])
 
-            while value[choose_index].data[0] == vocab.stoi[PAD]:
+            while value[choose_index].data[0] in forbid_list:
                 choose_index += 1
             #_, pred_idx = torch.max(seq_prob[i], dim=0)
             pred_idx = value[choose_index].data[0] 
@@ -55,10 +57,10 @@ def greedy_new(models, seq, vocab):
         choose_index = 0
         if i in blank_idx:
 
-            rank, value = torch.topk(new_seq_prob[i], 5, dim=0)
+            rank, value = torch.topk(new_seq_prob[i], 10, dim=0)
             #print(value[choose_index].data[0] == vocab.stoi[PAD])
 
-            while value[choose_index].data[0] in [vocab.stoi[PAD], vocab.stoi[BLK]]:
+            while value[choose_index].data[0] in forbid_list + [vocab.stoi[BLK]]:
                 choose_index += 1
             #_, pred_idx = torch.max(seq_prob[i], dim=0)
             pred_idx = value[choose_index].data[0] 
