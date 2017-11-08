@@ -110,8 +110,8 @@ def main(options):
         #new_string = tensor2string(new_seq, vocab)
         #strings.append(new_string)
         new_seqs.append(new_seq)
-        print(tensor2string(seq, vocab))
-        print(tensor2string(new_seq, vocab))
+        # print(tensor2string(seq, vocab))
+        # print(tensor2string(new_seq, vocab))
         '''
         print(seq)
         raw_input()
